@@ -1,9 +1,11 @@
 import OTPEntry from "../components/OTPEntry.jsx";
 import React, {useState} from "react";
 import {produce} from "immer";
+import SearchBar from "../components/SearchBar.jsx";
 
 function OTPMenu() {
     const [OTPEntries, setOTPEntries] = useState({})
+    const [search, setSearch] = useState("")
 
     for (let i = 0; i < 10; i++) {
         if (!OTPEntries[i]) {
@@ -11,7 +13,8 @@ function OTPMenu() {
                 draft[i] = {
                     title: "Sample OTP Entry " + i,
                     oldFavourite: false,
-                    index: i
+                    index: i,
+                    id: i
                 }
             }));
         }
@@ -23,12 +26,19 @@ function OTPMenu() {
         }));
     }
 
+    const onInput = (event) => {
+        setSearch(event.target.value)
+    }
+
     return (
         <div className="h-screen">
+            <SearchBar placeholder="Search for an OTP entry" onInput={onInput}/>
             <div className="flex flex-col overflow-y-scroll smooth-scroll">
-            {/*    sort by favourites then index */}
-                {Object.keys(OTPEntries).sort((a, b) => OTPEntries[a].oldFavourite ? -1 : OTPEntries[b].oldFavourite ? 1 : OTPEntries[a].index - OTPEntries[b].index).map((key) => (
-                    <OTPEntry key={key} title={OTPEntries[key].title} id={key} oldFavourite={OTPEntries[key].oldFavourite} savePreference={savePreference}/>
+                {Object.values(OTPEntries).filter((entry) => {
+                    return entry.title.toLowerCase().includes(search.toLowerCase())
+                }).sort((a, b) => a.oldFavourite ? -1 : b.oldFavourite ? 1 : a.index - b.index).map((entry) => (
+                    <OTPEntry key={entry.id} title={entry.title} id={entry.id} oldFavourite={entry.oldFavourite}
+                              savePreference={savePreference}/>
                 ))}
             </div>
         </div>

@@ -1,4 +1,4 @@
-// a flexible component which displays a single OTP entry, taking up its entire width in the flex row
+// a flexible component which displays a single OTP entry, taking up its entire width in the flex col
 import React, {useState} from 'react';
 
 const OTPEntry = ({title, id, oldFavourite, savePreference}) => {
@@ -14,7 +14,7 @@ const OTPEntry = ({title, id, oldFavourite, savePreference}) => {
                     id
                 });
             }}>
-                <svg className={(favourite ? "text-yellow-300" : "text-gray-500") + " w-8 h-8 m-4 me-1 transition-all ease-in-out"}
+                <svg className={(favourite ? "text-yellow-400" : "text-gray-500") + " w-8 h-8 m-4 me-1 transition-all ease-in-out"}
                      aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
                      fill="currentColor" viewBox="0 0 22 20">
                     <path
