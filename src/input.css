@@ -1,3 +1,23 @@
 @tailwind base;
+
+::-webkit-scrollbar {
+    width: 1.25rem;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
+
+@font-face {
+    font-family: "Inter var";
+    src: local("Inter var"),
+    url("./assets/Inter-Light.ttf") format("truetype");
+}
+
 @tailwind components;
 @tailwind utilities;
