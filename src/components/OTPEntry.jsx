@@ -1,7 +1,7 @@
 // a flexible component which displays a single OTP entry, taking up its entire width in the flex row
 import React, {useState} from 'react';
 
-const OTPEntry = ({title, oldFavourite, savePreference}) => {
+const OTPEntry = ({title, id, oldFavourite, savePreference}) => {
     const [favourite, setFavourite] = useState(oldFavourite);
 
     return (
@@ -9,7 +9,10 @@ const OTPEntry = ({title, oldFavourite, savePreference}) => {
             className="relative flex bg-gray-100 hover:bg-green-300 transition-all ease-in-out mx-6 my-4 border-y-4 border-gray-700 cursor-pointer">
             <div className="flex items-center hover:scale-125 transition-all ease-in-out" onClick={() => {
                 setFavourite(!favourite);
-                savePreference(!favourite);
+                savePreference({
+                    favourite: !favourite,
+                    id
+                });
             }}>
                 <svg className={(favourite ? "text-yellow-300" : "text-gray-500") + " w-8 h-8 m-4 me-1 transition-all ease-in-out"}
                      aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
