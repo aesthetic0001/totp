@@ -1,22 +1,26 @@
 import OTPEntry from "../components/OTPEntry.jsx";
 import React, {useState} from "react";
+import {produce} from "immer";
 
 function OTPMenu() {
     const [OTPEntries, setOTPEntries] = useState({})
 
     for (let i = 0; i < 10; i++) {
-        OTPEntries[i] = {
-            title: `OTP Entry ${i + 1}`,
-            oldFavourite: Math.random() < 0.5,
-            index: i
+        if (!OTPEntries[i]) {
+            setOTPEntries(produce((draft) => {
+                draft[i] = {
+                    title: "Sample OTP Entry " + i,
+                    oldFavourite: false,
+                    index: i
+                }
+            }));
         }
     }
 
     const savePreference = ({favourite, id}) => {
-        const newOTPEntries = {...OTPEntries};
-        newOTPEntries[id].oldFavourite = favourite;
-        setOTPEntries(newOTPEntries);
-        console.log(`Saved preference for OTP entry ${id}: ${favourite}`)
+        setOTPEntries(produce((draft) => {
+            draft[id].oldFavourite = favourite;
+        }));
     }
 
     return (
