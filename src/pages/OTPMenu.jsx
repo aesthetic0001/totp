@@ -2,24 +2,24 @@ import OTPEntry from "../components/OTPEntry.jsx";
 import React, {useState} from "react";
 import {produce} from "immer";
 import SearchBar from "../components/SearchBar.jsx";
+import { invoke } from '@tauri-apps/api/tauri'
 
 function OTPMenu() {
     const [OTPEntries, setOTPEntries] = useState({})
     const [search, setSearch] = useState("")
 
-    // for (let i = 0; i < 10; i++) {
-    //     if (!OTPEntries[i]) {
-    //         console.log("Adding OTP Entry " + i)
-    //         setOTPEntries(produce((draft) => {
-    //             draft[i] = {
-    //                 title: "Sample OTP Entry " + i,
-    //                 oldFavourite: false,
-    //                 index: i,
-    //                 id: i
-    //             }
-    //         }));
-    //     }
-    // }
+    // run tauri command get_saved_totp
+
+    const getSavedTOTP = async () => {
+        const response = await invoke('get_saved_totp')
+        console.log(response)
+        // setOTPEntries(response)
+    }
+
+    getSavedTOTP().then((res) => {
+        console.log("Got saved TOTP")
+        console.log(res)
+    })
 
     const savePreference = ({favourite, id}) => {
         setOTPEntries(produce((draft) => {
@@ -47,7 +47,6 @@ function OTPMenu() {
             <SearchBar placeholder="Search for an OTP entry" onInput={onInput}/>
             <div className="flex flex-col overflow-y-scroll smooth-scroll">
                 {Object.values(OTPEntries).filter((entry) => {
-                    console.log(entry)
                     return entry.title.toLowerCase().includes(search.toLowerCase())
                 }).sort((a, b) => a.oldFavourite ? -1 : b.oldFavourite ? 1 : a.index - b.index).map((entry) => (
                     <OTPEntry key={entry.id} title={entry.title} id={entry.id} oldFavourite={entry.oldFavourite}
