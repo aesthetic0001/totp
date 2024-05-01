@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::collections::HashMap;
+use std::sync::RwLock;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
@@ -15,10 +16,13 @@ fn get_save_dir() -> std::path::PathBuf {
 }
 
 #[derive(Default, Serialize, Deserialize)]
-struct Totp {
+struct TotpEntry {
     secret: String,
     digits: u8,
-    period: u8
+    period: u8,
+    id: u64,
+    title: String,
+    favourite: bool
 }
 
 trait TotpHotp {
@@ -26,7 +30,7 @@ trait TotpHotp {
     fn get_totp(&self) -> String;
 }
 
-impl TotpHotp for Totp {
+impl TotpHotp for TotpEntry {
     fn get_hotp(&self, counter: u64) -> String {
         let secret = base32::decode(base32::Alphabet::RFC4648 { padding: false }, &self.secret).unwrap();
         let mut counter_bytes = [0; 8];
@@ -48,21 +52,55 @@ impl TotpHotp for Totp {
 }
 
 lazy_static! {
-    static ref ACCOUNTS: RwLock<HashMap<String, Totp>> = {
+    static ref ACCOUNTS: RwLock<HashMap<u64, TotpEntry >> = {
         let save_path = get_save_dir().join("2fa.json");
         let saved = std::fs::read_to_string(&save_path).unwrap_or_default();
-        serde_json::from_str(&saved).unwrap_or_default()
+        RwLock::new(serde_json::from_str(&saved).unwrap_or_default())
     };
 }
 
 #[tauri::command]
 fn get_saved_totp() -> Result<String, String> {
+    let accounts = ACCOUNTS.read().unwrap();
+    Ok(serde_json::to_string(&*accounts).unwrap())
+}
 
+#[tauri::command]
+fn remove_account(id: u64) -> Result<(), String> {
+    println!("Removing account with id: {}", id);
+    let mut accounts = ACCOUNTS.write().unwrap();
+    accounts.remove(&id);
+    let save_path = get_save_dir().join("2fa.json");
+    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
+    Ok(())
+}
+
+#[tauri::command]
+fn add_account(id: u64, secret: String, digits: u8, period: u8, title: String) -> Result<(), String> {
+    println!("Adding account with id: {}", id);
+    let mut accounts = ACCOUNTS.write().unwrap();
+    accounts.insert(id, TotpEntry { secret, digits, period, id, title, favourite: false });
+    let save_path = get_save_dir().join("2fa.json");
+    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
+    Ok(())
+}
+
+#[tauri::command]
+fn set_favourite(id: u64, favourite: bool) -> Result<(), String> {
+    println!("Favouriting account with id: {}", id);
+    let mut accounts = ACCOUNTS.write().unwrap();
+    if let Some(account) = accounts.get_mut(&id) {
+        account.favourite = favourite;
+    }
+    let save_path = get_save_dir().join("2fa.json");
+    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
+    Ok(())
 }
 
 fn main() {
+    println!("Starting Tauri application!");
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_saved_totp])
+        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
