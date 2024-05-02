@@ -1,7 +1,10 @@
 @tailwind base;
 
 ::-webkit-scrollbar {
-    width: 1.25rem;
+    position: absolute;
+    width: 0.75rem;
+    margin: 0;
+    padding: 0;
 }
 
 ::-webkit-scrollbar-thumb {

@@ -30,16 +30,19 @@ function OTPMenu() {
         }));
         await invoke('remove_account', {id})
     }
-    
+
     const addEntry = async () => {
-        setOTPEntries(produce((draft) => {
-            draft[0] = {
-                "id": "dummy",
-                "title": "Dummy",
-                "favourite": false
-            }
-        }))
-        await invoke('add_account', {"id": 0, "title": "Dummy", secret: "dummy", digits: 6, period: 30})
+        const dummyCount = 10
+        for (let i = 1; i < dummyCount; i++) {
+            setOTPEntries(produce((draft) => {
+                draft[i] = {
+                    "id": "dummy",
+                    "title": "Dummy",
+                    "favourite": false
+                }
+            }))
+            await invoke('add_account', {"id": i, "title": "Dummy", secret: "dummy", digits: 6, period: 30})
+        }
     }
 
     const onInput = (event) => {
@@ -47,14 +50,16 @@ function OTPMenu() {
     }
 
     return (
-        <div className="h-screen">
+        <div>
             <div className="flex flex-row justify-center items-center">
                 <div className="flex-initial w-96 mx-6 my-4 p-2">
                     <SearchBar placeholder="Search for an OTP entry" onInput={onInput}/>
                 </div>
-                <SquarePlus className="w-8 h-8 mr-6 hover:scale-105 hover:fill-green-200 transition-all ease-in-out cursor-pointer" onClick={addEntry}/>
+                <SquarePlus
+                    className="w-8 h-8 mr-6 hover:scale-105 hover:fill-green-200 transition-all ease-in-out cursor-pointer"
+                    onClick={addEntry}/>
             </div>
-            <div className="flex flex-col overflow-y-scroll smooth-scroll">
+            <div className="flex flex-col overflow-auto smooth-scroll">
                 {Object.values(OTPEntries).filter((entry) => {
                     return entry.title.toLowerCase().includes(search.toLowerCase())
                 }).sort((a, b) => a.favourite ? -1 : b.favourite ? 1 : a.index - b.index).map((entry) => (
