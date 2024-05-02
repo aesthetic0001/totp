@@ -1,23 +1,26 @@
 import OTPEntry from "../components/OTPEntry.jsx";
 import React, {useState} from "react";
-import {produce} from "immer";
 import SearchBar from "../components/SearchBar.jsx";
 import {invoke} from '@tauri-apps/api/tauri'
 import {SquarePlus} from "lucide-react";
+import {useNavigate} from "react-router-dom";
 
 function OTPMenu() {
+    const navigate = useNavigate()
     const [OTPEntries, setOTPEntries] = useState({})
     const [search, setSearch] = useState("")
 
-    invoke('get_saved_totp').then((res) => {
+    // todo: switch this to use tauri events
+    async function syncOTPEntries() {
+        const res = await invoke('get_saved_totp')
         setOTPEntries(JSON.parse(res))
-    })
+    }
+
+    syncOTPEntries()
 
     const savePreference = async ({id, favourite}) => {
-        setOTPEntries(produce((draft) => {
-            draft[id].favourite = favourite;
-        }));
         await invoke('set_favourite', {id, favourite})
+        await syncOTPEntries()
     }
 
     const copyTOTP = async (id) => {
@@ -25,23 +28,15 @@ function OTPMenu() {
     }
 
     const deleteEntry = async (id) => {
-        setOTPEntries(produce((draft) => {
-            delete draft[id]
-        }));
         await invoke('remove_account', {id})
+        await syncOTPEntries()
     }
 
     const addEntry = async () => {
         const dummyCount = 10
         for (let i = 1; i < dummyCount; i++) {
-            setOTPEntries(produce((draft) => {
-                draft[i] = {
-                    "id": "dummy",
-                    "title": "Dummy",
-                    "favourite": false
-                }
-            }))
             await invoke('add_account', {"id": i, "title": "Dummy", secret: "dummy", digits: 6, period: 30})
+            await syncOTPEntries()
         }
     }
 
@@ -57,7 +52,9 @@ function OTPMenu() {
                 </div>
                 <SquarePlus
                     className="w-8 h-8 mr-6 hover:scale-105 hover:fill-green-200 transition-all ease-in-out cursor-pointer"
-                    onClick={addEntry}/>
+                    onClick={() => {
+                        navigate("/add", {replace: true});
+                    }}/>
             </div>
             <div className="flex flex-col overflow-auto smooth-scroll">
                 {Object.values(OTPEntries).filter((entry) => {
