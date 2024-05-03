@@ -4,6 +4,7 @@ import SearchBar from "../components/SearchBar.jsx";
 import {invoke} from '@tauri-apps/api/tauri'
 import {SquarePlus} from "lucide-react";
 import {useNavigate} from "react-router-dom";
+import {toast, Toaster} from "react-hot-toast";
 
 function OTPMenu() {
     const navigate = useNavigate()
@@ -24,20 +25,16 @@ function OTPMenu() {
     }
 
     const copyTOTP = async (id) => {
-        await navigator.clipboard.writeText(id + " TOTP")
+        const code = await invoke('retrieve_code', {id})
+        await navigator.clipboard.writeText(code)
+        toast.success("Copied code to clipboard!", {
+            duration: 1000
+        });
     }
 
     const deleteEntry = async (id) => {
         await invoke('remove_account', {id})
         await syncOTPEntries()
-    }
-
-    const addEntry = async () => {
-        const dummyCount = 10
-        for (let i = 1; i < dummyCount; i++) {
-            await invoke('add_account', {"id": i, "title": "Dummy", secret: "dummy", digits: 6, period: 30})
-            await syncOTPEntries()
-        }
     }
 
     const onInput = (event) => {
@@ -64,6 +61,7 @@ function OTPMenu() {
                               savePreference={savePreference} copyTOTP={copyTOTP} deleteEntry={deleteEntry}/>
                 ))}
             </div>
+            <Toaster position="bottom-center"/>
         </div>
     );
 }

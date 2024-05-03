@@ -15,7 +15,7 @@ fn get_save_dir() -> std::path::PathBuf {
     save_dir
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 struct TotpEntry {
     secret: String,
     digits: u8,
@@ -76,7 +76,8 @@ fn remove_account(id: u64) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn add_account(id: u64, secret: String, digits: u8, period: u8, title: String) -> Result<(), String> {
+fn add_account(title: String, secret: String, digits: u8, period: u8) -> Result<(), String> {
+    let id = chrono::Utc::now().timestamp_micros() as u64;
     println!("Adding account with id: {}", id);
     let mut accounts = ACCOUNTS.write().unwrap();
     accounts.insert(id, TotpEntry { secret, digits, period, id, title, favourite: false });
@@ -87,7 +88,7 @@ fn add_account(id: u64, secret: String, digits: u8, period: u8, title: String) -
 
 #[tauri::command]
 fn set_favourite(id: u64, favourite: bool) -> Result<(), String> {
-    println!("Favouriting account with id: {}", id);
+    println!("Modifying favourites for account with id: {}", id);
     let mut accounts = ACCOUNTS.write().unwrap();
     if let Some(account) = accounts.get_mut(&id) {
         account.favourite = favourite;
@@ -97,10 +98,18 @@ fn set_favourite(id: u64, favourite: bool) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn retrieve_code(id: u64) -> Result<String, ()> {
+    println!("Retrieving code for account with id: {}", id);
+    let accounts = ACCOUNTS.read().unwrap();
+    let account = accounts.get(&id).unwrap();
+    Ok(account.get_totp())
+}
+
 fn main() {
     println!("Starting Tauri application!");
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite])
+        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -3,6 +3,7 @@ import TextInput from "../components/TextInput.jsx";
 import {ArrowLeft} from "lucide-react";
 import {Link} from "react-router-dom";
 import {toast, Toaster} from "react-hot-toast";
+import {invoke} from "@tauri-apps/api/tauri";
 
 function AddOTP() {
     const [accountName, setAccountName] = useState("");
@@ -46,7 +47,7 @@ function AddOTP() {
                 </div>
                 <button
                     className="bg-emerald-400 hover:bg-emerald-500 transition-all ease-in-out text-white font-bold py-2 px-4 rounded-full"
-                    onClick={() => {
+                    onClick={async () => {
                         // if the account name or secret key is empty, don't add the account
                         if (!accountName || !secretKey) {
                             toast.error("Account name and/or secret key cannot be empty!", {
@@ -61,6 +62,7 @@ function AddOTP() {
                             });
                             return
                         }
+                        await invoke('add_account', {title: accountName, secret: secretKey, digits: digits, period: 30})
                         toast.success("Account added successfully!", {
                             duration: 1000
                         });
