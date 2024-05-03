@@ -2,13 +2,14 @@
 
 A simple TOTP desktop app to store and retrieve time-based 2FA codes
 
+![img.png](.github/assets/img.png)
+
 ## Features
 - [x] Add and delete TOTP accounts
 - [x] Retrieve codes TOTP codes
 - [ ] Import and export accounts
 - [ ] Password protection for stored accounts
 
-![img.png](.github/assets/img.png)
 ## Installation
 Prebuilt binaries are available for Windows, MacOS and Linux. You can download the latest release from the [releases page](https://github.com/aesthetic0001/totp/releases/latest)
 
