@@ -156,14 +156,29 @@ fn add_from_clipboard(clipboard: String) -> i64 {
             ctr += 1;
         }
     }
+    
+    let save_path = get_save_dir().join("2fa.json");
+    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
 
     return ctr;
+}
+
+#[tauri::command]
+fn set_name(id: u64, new_name: String) -> Result<(), String> {
+    println!("Editing name for account with id: {}", id);
+    let mut accounts = ACCOUNTS.write().unwrap();
+    if let Some(account) = accounts.get_mut(&id) {
+        account.title = new_name;
+    }
+    let save_path = get_save_dir().join("2fa.json");
+    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
+    Ok(())
 }
 
 fn main() {
     println!("Starting Tauri application!");
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard])
+        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard, set_name])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

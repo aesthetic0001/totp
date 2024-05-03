@@ -42,6 +42,11 @@ function OTPMenu() {
         setSearch(event.target.value)
     }
 
+    const editName = async ({id, newTitle}) => {
+        await invoke('set_name', {id, newName: newTitle})
+        await syncOTPEntries()
+    }
+
     return (
         <div>
             <div className="flex flex-row justify-center items-center">
@@ -64,7 +69,7 @@ function OTPMenu() {
                     return entry.title.toLowerCase().includes(search.toLowerCase())
                 }).sort((a, b) => a.favourite ? -1 : b.favourite ? 1 : a.index - b.index).map((entry) => (
                     <OTPEntry key={entry.id} title={entry.title} id={entry.id} oldFavourite={entry.favourite}
-                              savePreference={savePreference} copyTOTP={copyTOTP} deleteEntry={deleteEntry}/>
+                              savePreference={savePreference} copyTOTP={copyTOTP} deleteEntry={deleteEntry} editName={editName}/>
                 ))}
             </div>
             <Toaster position="bottom-center"/>

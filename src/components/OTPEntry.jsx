@@ -2,8 +2,10 @@
 import React, {useState} from 'react';
 import {Star, ClipboardCopy, Trash} from 'lucide-react';
 
-const OTPEntry = ({title, id, oldFavourite, savePreference, copyTOTP, deleteEntry}) => {
+const OTPEntry = ({title, id, oldFavourite, savePreference, copyTOTP, deleteEntry, editName}) => {
     const [favourite, setFavourite] = useState(oldFavourite);
+    const [inputActive, setInputActive] = useState(false);
+    const [newTitle, setNewTitle] = useState(title);
 
     return (
         <div
@@ -19,7 +21,28 @@ const OTPEntry = ({title, id, oldFavourite, savePreference, copyTOTP, deleteEntr
                     className={(favourite ? "fill-yellow-400 text-yellow-400 " : "fill-gray-500 text-gray-500 ") + " w-8 h-8 m-4 me-1 transition-all ease-in-out"}/>
             </div>
             <div className="flex-1 p-4">
-                <h1 className="text-2xl font-bold text-center">{title}</h1>
+            {/*    on double click text, set input active. once it is out of focus, disable input active*/}
+                <div className="text-2xl font-bold text-center" onDoubleClick={() => {
+                    setInputActive(true);
+                }} onBlur={() => {
+                    setInputActive(false);
+                    editName({
+                        id,
+                        newTitle
+                    });
+                }}>
+                    {inputActive ? <input type="text" value={newTitle} onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                            editName({
+                                id,
+                                newTitle
+                            });
+                            setInputActive(false);
+                        }
+                    }} onInput={(event) => {
+                        setNewTitle(event.target.value);
+                    }} className="bg-transparent outline-none" /> : title}
+                </div>
             </div>
             <div className="flex items-center">
                 <div className="hover:scale-110 transition-all ease-in-out" onClick={() => {
