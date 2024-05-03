@@ -106,10 +106,64 @@ fn retrieve_code(id: u64) -> Result<String, ()> {
     Ok(account.get_totp())
 }
 
+fn parse_otpauth(url: String) -> Result<(u64, TotpEntry), String> {
+    let uri = url::Url::parse(&url).unwrap();
+    let mode = uri.host_str().unwrap();
+    assert_eq!(mode, "totp");
+    let name = uri.path();
+    let secret = match uri.query_pairs().find(|(k, _)| k == "secret") {
+        Some((_, v)) => v.to_string(),
+        None => {
+            println!("No secret found!");
+            return Err("No secret found!".to_string());
+        }
+    };
+    let digits = match uri.query_pairs().find(|(k, _)| k == "digits") {
+        Some((_, v)) => v.parse::<u8>().unwrap(),
+        None => 6u8
+    };
+    let period = match uri.query_pairs().find(|(k, _)| k == "period") {
+        Some((_, v)) => v.parse::<u8>().unwrap(),
+        None => 30u8
+    };
+    let chars = name.chars().collect::<Vec<char>>();
+    let name = chars[1..].iter().collect::<String>();
+    // make sure that name gets rid of the url encoded characters
+    let name = urlencoding::decode(&name).unwrap();
+    let id = chrono::Utc::now().timestamp_micros() as u64;
+    Ok((id, TotpEntry { secret, digits, period, id, title: name.parse().unwrap(), favourite: false }))
+}
+
+#[tauri::command]
+fn add_from_clipboard(clipboard: String) -> i64 {
+    let lines = clipboard.lines();
+    let mut accounts = ACCOUNTS.write().unwrap();
+    let mut ctr = 0;
+
+    for line in lines {
+        if line.starts_with("otpauth://") {
+            let parsed = parse_otpauth(line.to_string());
+            if parsed.is_err() {
+                eprintln!("Error parsing otpauth uri: {}", line);
+                continue;
+            }
+            let (id, entry) = parsed.unwrap();
+            if accounts.contains_key(&id) {
+                eprintln!("Weird! Account for id {} already exists!", id);
+                continue;
+            }
+            accounts.insert(id, entry);
+            ctr += 1;
+        }
+    }
+
+    return ctr;
+}
+
 fn main() {
     println!("Starting Tauri application!");
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code])
+        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

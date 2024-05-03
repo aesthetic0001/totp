@@ -5,6 +5,7 @@ import {invoke} from '@tauri-apps/api/tauri'
 import {SquarePlus} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 import {toast, Toaster} from "react-hot-toast";
+import {writeText} from '@tauri-apps/api/clipboard';
 
 function OTPMenu() {
     const navigate = useNavigate()
@@ -26,7 +27,7 @@ function OTPMenu() {
 
     const copyTOTP = async (id) => {
         const code = await invoke('retrieve_code', {id})
-        await navigator.clipboard.writeText(code)
+        await writeText(code)
         toast.success("Copied code to clipboard!", {
             duration: 2500
         });

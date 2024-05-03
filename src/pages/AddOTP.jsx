@@ -4,6 +4,7 @@ import {ArrowLeft} from "lucide-react";
 import {Link} from "react-router-dom";
 import {toast, Toaster} from "react-hot-toast";
 import {invoke} from "@tauri-apps/api/tauri";
+import { readText } from '@tauri-apps/api/clipboard';
 
 function AddOTP() {
     const [accountName, setAccountName] = useState("");
@@ -12,7 +13,7 @@ function AddOTP() {
 
     return (
         <div>
-            <div className="flex flex-col space-y-10 justify-center items-center">
+            <div className="flex flex-col space-y-10 justify-center items-center text-center">
                 <Link className="flex items-center cursor-pointer hover:text-emerald-400 transition-all ease-in-out"
                       to="/">
                     <ArrowLeft className="h-8 w-8"/>
@@ -72,6 +73,23 @@ function AddOTP() {
                     }}>
                     Add Account
                 </button>
+                <div className="flex flex-col space-y-5 justify-center items-center text-center">
+                    <p>
+                        Or, try adding accounts from clipboard. Note that they need to follow the otpauth://totp/ format, and should be newline seperated.
+                    </p>
+                    <button
+                        className="bg-emerald-400 hover:bg-emerald-500 transition-all ease-in-out text-white font-bold py-2 px-4 rounded-full"
+                        onClick={async () => {
+                            const quantity = await invoke('add_from_clipboard', {
+                                clipboard: await readText()
+                            })
+                            toast.success(`Successfully added ${quantity} accounts from clipboard!`, {
+                                duration: 1000
+                            });
+                        }}>
+                        Add Account from Clipboard
+                    </button>
+                </div>
             </div>
             <Toaster position="bottom-center" />
         </div>
