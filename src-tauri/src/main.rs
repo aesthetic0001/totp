@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod password_encryption;
+
 use std::collections::HashMap;
 use std::sync::RwLock;
 use lazy_static::lazy_static;
@@ -76,11 +78,11 @@ fn remove_account(id: u64) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn add_account(title: String, secret: String, digits: u8, period: u8) -> Result<(), String> {
+fn add_account(title: &str, secret: &str, digits: u8, period: u8) -> Result<(), String> {
     let id = chrono::Utc::now().timestamp_micros() as u64;
     println!("Adding account with id: {}", id);
     let mut accounts = ACCOUNTS.write().unwrap();
-    accounts.insert(id, TotpEntry { secret, digits, period, id, title, favourite: false });
+    accounts.insert(id, TotpEntry { secret: secret.to_string(), digits, period, id, title: title.to_string(), favourite: false });
     let save_path = get_save_dir().join("2fa.json");
     std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
     Ok(())
@@ -106,7 +108,7 @@ fn retrieve_code(id: u64) -> Result<String, ()> {
     Ok(account.get_totp())
 }
 
-fn parse_otpauth(url: String) -> Result<(u64, TotpEntry), String> {
+fn parse_otpauth(url: &str) -> Result<(u64, TotpEntry), String> {
     let uri = url::Url::parse(&url).unwrap();
     let mode = uri.host_str().unwrap();
     assert_eq!(mode, "totp");
@@ -135,14 +137,14 @@ fn parse_otpauth(url: String) -> Result<(u64, TotpEntry), String> {
 }
 
 #[tauri::command]
-fn add_from_clipboard(clipboard: String) -> i64 {
+fn add_from_clipboard(clipboard: &str) -> i64 {
     let lines = clipboard.lines();
     let mut accounts = ACCOUNTS.write().unwrap();
     let mut ctr = 0;
 
     for line in lines {
         if line.starts_with("otpauth://") {
-            let parsed = parse_otpauth(line.to_string());
+            let parsed = parse_otpauth(line);
             if parsed.is_err() {
                 eprintln!("Error parsing otpauth uri: {}", line);
                 continue;
@@ -164,11 +166,11 @@ fn add_from_clipboard(clipboard: String) -> i64 {
 }
 
 #[tauri::command]
-fn set_name(id: u64, new_name: String) -> Result<(), String> {
+fn set_name(id: u64, new_name: &str) -> Result<(), String> {
     println!("Editing name for account with id: {}", id);
     let mut accounts = ACCOUNTS.write().unwrap();
     if let Some(account) = accounts.get_mut(&id) {
-        account.title = new_name;
+        account.title = new_name.to_string();
     }
     let save_path = get_save_dir().join("2fa.json");
     std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
