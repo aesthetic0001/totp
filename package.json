@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run tw && vite",
-    "build": "vite build",
+    "build": "npm run tw && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "tw_watch": "npx tailwindcss -i ./src/input.css -o ./src/styles.css --watch",
