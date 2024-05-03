@@ -53,6 +53,11 @@ function OTPMenu() {
                         navigate("/add", {replace: true});
                     }}/>
             </div>
+            <div className="flex items-center justify-center">
+                <h1>
+                    Next code refresh in {30 - Math.floor(Date.now() / 1000) % 30}s
+                </h1>
+            </div>
             <div className="flex flex-col overflow-auto smooth-scroll">
                 {Object.values(OTPEntries).filter((entry) => {
                     return entry.title.toLowerCase().includes(search.toLowerCase())
