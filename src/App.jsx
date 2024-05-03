@@ -2,6 +2,7 @@ import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import OTPMenu from './pages/OTPMenu';
 import PasswordStartup from "./pages/PasswordStartup";
 import {appWindow} from '@tauri-apps/api/window'
+import {open} from '@tauri-apps/api/shell'
 import {Minimize2, CircleX} from 'lucide-react';
 import AddOTP from "./pages/AddOTP.jsx";
 
@@ -10,7 +11,9 @@ function App() {
         <div className="relative">
             <div data-tauri-drag-region
                  className="fixed z-50 bg-white flex flex-row justify-between select-none top-0 left-0 right-0">
-                <div data-tauri-drag-region className="flex items-center justify-center mx-2 text-2xl hover:text-emerald-400 transition-all ease-in-out">
+                <div data-tauri-drag-region className="flex items-center justify-center mx-2 text-2xl hover:text-emerald-400 transition-all ease-in-out cursor-pointer" onClick={() => {
+                    open('https://github.com/aesthetic0001/totp')
+                }}>
                     simple totp
                 </div>
                 <div className="flex justify-end">
