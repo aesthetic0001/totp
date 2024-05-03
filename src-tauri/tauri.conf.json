@@ -6,7 +6,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "simple-totp",
+    "productName": "simple totp",
     "version": "0.1.0"
   },
   "tauri": {
