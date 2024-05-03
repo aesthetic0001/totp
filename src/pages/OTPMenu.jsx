@@ -55,7 +55,7 @@ function OTPMenu() {
             </div>
             <div className="flex items-center justify-center">
                 <h1>
-                    Next code refresh in {30 - Math.floor(Date.now() / 1000) % 30}s
+                    New codes in {30 - Math.floor(Date.now() / 1000) % 30}s
                 </h1>
             </div>
             <div className="flex flex-col overflow-auto smooth-scroll">
