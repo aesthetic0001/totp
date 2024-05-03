@@ -6,8 +6,8 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "tauri-app",
-    "version": "0.0.0"
+    "productName": "simple-totp",
+    "version": "0.1.0"
   },
   "tauri": {
     "allowlist": {
@@ -30,7 +30,7 @@
     },
     "windows": [
       {
-        "title": "tauri-app",
+        "title": "simple totp",
         "width": 400,
         "height": 600,
         "alwaysOnTop": true,
@@ -44,7 +44,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "com.tauri.dev",
+      "identifier": "me.aesthetic.totp",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",

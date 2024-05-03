@@ -28,7 +28,7 @@ function OTPMenu() {
         const code = await invoke('retrieve_code', {id})
         await navigator.clipboard.writeText(code)
         toast.success("Copied code to clipboard!", {
-            duration: 1000
+            duration: 2500
         });
     }
 
