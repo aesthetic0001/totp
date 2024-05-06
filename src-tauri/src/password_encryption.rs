@@ -27,7 +27,7 @@ static ref ENCRYPTION_STATUS: RwLock<EncryptionStatus> = {
     };
 }
 
-fn is_encrypted() -> bool {
+pub(crate) fn is_encrypted() -> bool {
     ENCRYPTION_STATUS.read().unwrap().encrypted
 }
 

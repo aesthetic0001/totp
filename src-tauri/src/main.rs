@@ -108,6 +108,11 @@ fn retrieve_code(id: u64) -> Result<String, ()> {
     Ok(account.get_totp())
 }
 
+#[tauri::command]
+fn is_encrypted() -> bool {
+    password_encryption::is_encrypted()
+}
+
 fn parse_otpauth(url: &str) -> Result<(u64, TotpEntry), String> {
     let uri = url::Url::parse(&url).unwrap();
     let mode = uri.host_str().unwrap();
@@ -180,7 +185,7 @@ fn set_name(id: u64, new_name: &str) -> Result<(), String> {
 fn main() {
     println!("Starting Tauri application!");
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard, set_name])
+        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard, set_name, is_encrypted])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
