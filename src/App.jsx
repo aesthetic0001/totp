@@ -6,6 +6,7 @@ import {open} from '@tauri-apps/api/shell'
 import {Minimize2, CircleX} from 'lucide-react';
 import AddOTP from "./pages/AddOTP.jsx";
 import Homepage from "./pages/Home.jsx";
+import Settings from "./pages/Settings.jsx";
 
 function App() {
     return (
@@ -41,6 +42,7 @@ function App() {
                         <Route path="/accounts" element={<OTPMenu/>}/>
                         <Route path="/password" element={<PasswordStartup/>}/>
                         <Route path="/add" element={<AddOTP/>}/>
+                        <Route path="/settings" element={<Settings/>}/>
                     </Routes>
                 </Router>
             </div>

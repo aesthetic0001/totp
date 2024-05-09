@@ -2,7 +2,7 @@ import OTPEntry from "../components/OTPEntry.jsx";
 import React, {useState} from "react";
 import SearchBar from "../components/SearchBar.jsx";
 import {invoke} from '@tauri-apps/api/tauri'
-import {SquarePlus} from "lucide-react";
+import {SquarePlus, Settings} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 import {toast, Toaster} from "react-hot-toast";
 import {writeText} from '@tauri-apps/api/clipboard';
@@ -57,6 +57,11 @@ function OTPMenu() {
                     className="w-8 h-8 mr-6 hover:scale-105 hover:fill-green-200 transition-all ease-in-out cursor-pointer"
                     onClick={() => {
                         navigate("/add", {replace: true});
+                    }}/>
+                <Settings
+                    className="w-8 h-8 mr-6 hover:scale-105 hover:fill-green-200 transition-all ease-in-out cursor-pointer"
+                    onClick={() => {
+                        navigate("/settings", {replace: true});
                     }}/>
             </div>
             <div className="flex items-center justify-center">

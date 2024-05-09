@@ -6,7 +6,7 @@ function PasswordStartup() {
 
     return (
         <div className="flex flex-col justify-center items-center text-center space-y-10">
-            <h1 className="text-2xl my-8">Please enter the master password to decrypt your OTP secrets</h1>
+            <h1 className="text-2xl my-8">Master Password</h1>
             <EcholessInput currentText={"*".repeat(password.length)} placeholder="Master Password" onInput={(event) => {
                 if (event.target.value.length >= 32) return
                 setPassword(event.target.value);

@@ -11,7 +11,7 @@ edition = "2021"
 tauri-build = { version = "1", features = [] }
 
 [dependencies]
-tauri = { version = "1", features = [ "clipboard-read-text", "clipboard-write-text", "window-minimize", "window-show", "window-maximize", "window-unminimize", "window-hide", "window-unmaximize", "window-close", "window-start-dragging", "shell-open"] }
+tauri = { version = "1", features = [ "fs-all", "dialog-all", "clipboard-read-text", "clipboard-write-text", "window-minimize", "window-show", "window-maximize", "window-unminimize", "window-hide", "window-unmaximize", "window-close", "window-start-dragging", "shell-open"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base32 = "0.4.0"
