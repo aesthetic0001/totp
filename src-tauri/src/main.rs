@@ -4,6 +4,7 @@
 mod password_encryption;
 
 use std::collections::HashMap;
+use std::path;
 use std::sync::RwLock;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -182,10 +183,44 @@ fn set_name(id: u64, new_name: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn import_from_json(path: String) -> Result<i64, String> {
+    let path = path::Path::new(&path);
+    
+    if !path.exists() {
+        return Err("File does not exist!".to_string());
+    }
+    
+    println!("Importing from file: {:?}", path);
+    
+    let file = std::fs::read_to_string(&path).unwrap();
+    let parsed: HashMap<u64, TotpEntry> = serde_json::from_str(&file).unwrap_or_default();
+    let mut accounts = ACCOUNTS.write().unwrap();
+    let mut ctr = 0;
+    for (id, entry) in parsed {
+        if accounts.contains_key(&id) {
+            eprintln!("Weird! Account for id {} already exists!", id);
+            continue;
+        }
+        accounts.insert(id, entry);
+        ctr += 1;
+    }
+    
+    let save_path = get_save_dir().join("2fa.json");
+    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
+    Ok(ctr)
+}
+
+#[tauri::command]
+fn export_to_json() -> String {
+    let accounts = ACCOUNTS.read().unwrap();
+    serde_json::to_string(&*accounts).unwrap()
+}
+
 fn main() {
     println!("Starting Tauri application!");
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard, set_name, is_encrypted])
+        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard, set_name, is_encrypted, import_from_json, export_to_json])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
