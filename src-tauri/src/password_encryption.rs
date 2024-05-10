@@ -10,7 +10,7 @@ use crate::get_save_dir;
 #[derive(Default, Serialize, Deserialize)]
 struct EncryptionStatus {
     encrypted: bool,
-    iv: String,
+    iv: String
 }
 
 lazy_static! {
@@ -44,7 +44,7 @@ pub(crate) fn is_encrypted() -> bool {
     ENCRYPTION_STATUS.read().unwrap().encrypted
 }
 
-fn try_decrypt(data: &str) -> Result<String, String> {
+pub(crate) fn try_decrypt(data: &str) -> Result<String, String> {
     if !is_encrypted() || CIPHER.read().unwrap().is_none() {
         return Ok(data.to_string());
     }
@@ -58,7 +58,7 @@ fn try_decrypt(data: &str) -> Result<String, String> {
     Ok(decrypted)
 }
 
-fn encrypt(data: &str) -> Result<String, String> {
+pub(crate) fn encrypt(data: &str) -> Result<String, String> {
     if !is_encrypted() || CIPHER.read().unwrap().is_none() {
         return Err("Encryption not enabled".to_string());
     }
@@ -73,7 +73,7 @@ fn encrypt(data: &str) -> Result<String, String> {
 }
 
 
-pub(crate)fn new_cipher(password: &str) -> Result<Aes256Gcm, String> {
+fn new_cipher(password: &str) -> Result<Aes256Gcm, String> {
     let password = password.as_bytes();
     if password.len() != 32 {
         return Err("Password must be at least 32 bytes long".to_string());
