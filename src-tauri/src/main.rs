@@ -179,8 +179,7 @@ fn add_from_clipboard(clipboard: &str) -> i64 {
 #[tauri::command]
 fn set_name(id: u64, new_name: &str) -> Result<(), String> {
     println!("Editing name for account with id: {}", id);
-    let mut accounts = ACCOUNTS.write().unwrap();
-    if let Some(account) = accounts.get_mut(&id) {
+    if let Some(account) = ACCOUNTS.write().unwrap().get_mut(&id) {
         account.title = new_name.to_string();
     }
     save_2fa();

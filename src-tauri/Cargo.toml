@@ -1,6 +1,6 @@
 [package]
 name = "simple-totp"
-version = "0.1.3"
+version = "0.1.4"
 description = "A simple TOTP secrets manager"
 authors = ["aesthetic0001"]
 edition = "2021"
