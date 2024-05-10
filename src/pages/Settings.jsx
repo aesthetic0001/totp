@@ -69,20 +69,28 @@ function Settings() {
             <Modal open={modalOpen} setOpen={setModalOpen}
                    title={!passwordProtected ? 'Set Master Password' : 'Disable Master Password'}
                    description={!passwordProtected ? "Please note that whitespaces will be excluded during encryption!" : "Your files will be stored in plaintext if this option is disabled!"}
-                   actionText="Confirm" dialogueBox={!passwordProtected} onDialogAction={async (x) => {
-                const previous = password
-                setPassword(x);
-                if (!x) return false
-                if (x.length > 32) {
-                    if (previous.length < x.length && (x.length - 33) % 8 === 0) {
-                        toast.error("Password cannot be longer than 32 characters!", {
-                            duration: 2000
-                        });
-                    }
-                    return false
-                }
-                return true
-            }}/>
+                   actionText="Confirm" dialogueBox={!passwordProtected}
+                   onSubmit={async () => {
+                       if (passwordProtected) {
+                           await invoke('disable_encryption')
+                       } else {
+                            await invoke('enable_encryption', {password: password})
+                          }
+                   }}
+                   onDialogAction={async (x) => {
+                       const previous = password
+                       setPassword(x);
+                       if (!x) return false
+                       if (x.length > 32) {
+                           if (previous.length < x.length && (x.length - 33) % 8 === 0) {
+                               toast.error("Password cannot be longer than 32 characters!", {
+                                   duration: 2000
+                               });
+                           }
+                           return false
+                       }
+                       return true
+                   }}/>
             <Toaster position="bottom-center"/>
         </div>
     );
