@@ -74,8 +74,8 @@ function Settings() {
                        if (passwordProtected) {
                            await invoke('disable_encryption')
                        } else {
-                            await invoke('enable_encryption', {password: password})
-                          }
+                           await invoke('set_master_password', {key: password})
+                       }
                    }}
                    onDialogAction={async (x) => {
                        const previous = password

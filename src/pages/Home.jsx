@@ -1,24 +1,18 @@
-import PasswordStartup from "./PasswordStartup.jsx";
-import OTPMenu from "./OTPMenu.jsx";
 import {invoke} from "@tauri-apps/api/tauri";
 import React, {useState} from "react";
+import {useNavigate} from "react-router-dom";
 
 function Homepage() {
-    const [ready, setReady] = useState(false)
-    let passwordProtected = false
-    
+    const navigate = useNavigate()
     invoke('is_encrypted').then((res) => {
-        passwordProtected = res
-        setReady(true)
+        navigate(res ? "/password" : "/accounts")
     })
     
     return (
-        <div>
-            {
-                ready ? (passwordProtected ? <PasswordStartup/> : <OTPMenu/>) : <p>
-                    Loading
-                </p>
-            }
+        <div className="flex items-center justify-center">
+            <p>
+                Loading
+            </p>
         </div>
     );
 }

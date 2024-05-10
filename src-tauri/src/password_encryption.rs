@@ -28,15 +28,17 @@ pub(crate) fn is_encrypted() -> bool {
 }
 
 pub(crate) fn try_decrypt(data: &str) -> Result<String, String> {
-    if !is_encrypted() || CIPHER.read().unwrap().is_none() {
+    if !is_encrypted() {
         return Ok(data.to_string());
     }
-
+    
+    let data = hex::decode(data).map_err(|e| e.to_string())?;
+    let data = data.as_slice();
     let nonce = [0u8; 12];
     let nonce = Nonce::from_slice(&nonce);
     let cipher = CIPHER.read().unwrap();
     let cipher = cipher.as_ref().ok_or("Cipher not initialized".to_string())?;
-    let decrypted = cipher.decrypt(&nonce, data.as_bytes()).map_err(|e| e.to_string())?;
+    let decrypted = cipher.decrypt(&nonce, data).map_err(|e| e.to_string())?;
     let decrypted = String::from_utf8(decrypted).map_err(|e| e.to_string())?;
 
     Ok(decrypted)
@@ -89,7 +91,7 @@ pub(crate) fn enable_encryption(password: &str) -> Result<(), String> {
 
     let hash = hasher.finalize();
     let hash = hex::encode(hash);
-    
+
     ENCRYPTION_STATUS.write().unwrap().hash = hash;
     // save the encryption status
     let save_path = get_save_dir().join("encryption_status.json");

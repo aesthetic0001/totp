@@ -82,7 +82,7 @@ fn get_saved_totp() -> Result<String, String> {
 fn remove_account(id: u64) -> Result<(), String> {
     println!("Removing account with id: {}", id);
     ACCOUNTS.write().unwrap().remove(&id);
-
+    save_2fa();
     Ok(())
 }
 
