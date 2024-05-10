@@ -1,7 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod password_encryption;
+
 use std::collections::HashMap;
+use std::path;
 use std::sync::RwLock;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -15,14 +18,14 @@ fn get_save_dir() -> std::path::PathBuf {
     save_dir
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 struct TotpEntry {
     secret: String,
     digits: u8,
     period: u8,
     id: u64,
     title: String,
-    favourite: bool
+    favourite: bool,
 }
 
 trait TotpHotp {
@@ -55,7 +58,17 @@ lazy_static! {
     static ref ACCOUNTS: RwLock<HashMap<u64, TotpEntry >> = {
         let save_path = get_save_dir().join("2fa.json");
         let saved = std::fs::read_to_string(&save_path).unwrap_or_default();
-        RwLock::new(serde_json::from_str(&saved).unwrap_or_default())
+        let accounts: HashMap<u64, TotpEntry> = if password_encryption::is_encrypted() {
+            let mut encrypted_accounts: HashMap<u64, TotpEntry> = serde_json::from_str(&saved).unwrap_or_default();
+            for (_, account) in encrypted_accounts.iter_mut() {
+                let secret = password_encryption::try_decrypt(&account.secret).unwrap();
+                account.secret = secret;
+            }
+            encrypted_accounts
+        } else {
+            serde_json::from_str(&saved).unwrap_or_default()
+        };
+        RwLock::new(accounts)
     };
 }
 
@@ -68,33 +81,27 @@ fn get_saved_totp() -> Result<String, String> {
 #[tauri::command]
 fn remove_account(id: u64) -> Result<(), String> {
     println!("Removing account with id: {}", id);
-    let mut accounts = ACCOUNTS.write().unwrap();
-    accounts.remove(&id);
-    let save_path = get_save_dir().join("2fa.json");
-    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
+    ACCOUNTS.write().unwrap().remove(&id);
+    save_2fa();
     Ok(())
 }
 
 #[tauri::command]
-fn add_account(title: String, secret: String, digits: u8, period: u8) -> Result<(), String> {
+fn add_account(title: &str, secret: &str, digits: u8, period: u8) -> Result<(), String> {
     let id = chrono::Utc::now().timestamp_micros() as u64;
     println!("Adding account with id: {}", id);
-    let mut accounts = ACCOUNTS.write().unwrap();
-    accounts.insert(id, TotpEntry { secret, digits, period, id, title, favourite: false });
-    let save_path = get_save_dir().join("2fa.json");
-    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
+    ACCOUNTS.write().unwrap().insert(id, TotpEntry { secret: secret.to_string(), digits, period, id, title: title.to_string(), favourite: false });
+    save_2fa();
     Ok(())
 }
 
 #[tauri::command]
 fn set_favourite(id: u64, favourite: bool) -> Result<(), String> {
     println!("Modifying favourites for account with id: {}", id);
-    let mut accounts = ACCOUNTS.write().unwrap();
-    if let Some(account) = accounts.get_mut(&id) {
+    if let Some(account) = ACCOUNTS.write().unwrap().get_mut(&id) {
         account.favourite = favourite;
     }
-    let save_path = get_save_dir().join("2fa.json");
-    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
+    save_2fa();
     Ok(())
 }
 
@@ -106,7 +113,12 @@ fn retrieve_code(id: u64) -> Result<String, ()> {
     Ok(account.get_totp())
 }
 
-fn parse_otpauth(url: String) -> Result<(u64, TotpEntry), String> {
+#[tauri::command]
+fn is_encrypted() -> bool {
+    password_encryption::is_encrypted()
+}
+
+fn parse_otpauth(url: &str) -> Result<(u64, TotpEntry), String> {
     let uri = url::Url::parse(&url).unwrap();
     let mode = uri.host_str().unwrap();
     assert_eq!(mode, "totp");
@@ -135,19 +147,64 @@ fn parse_otpauth(url: String) -> Result<(u64, TotpEntry), String> {
 }
 
 #[tauri::command]
-fn add_from_clipboard(clipboard: String) -> i64 {
+fn add_from_clipboard(clipboard: &str) -> i64 {
     let lines = clipboard.lines();
-    let mut accounts = ACCOUNTS.write().unwrap();
     let mut ctr = 0;
 
-    for line in lines {
-        if line.starts_with("otpauth://") {
-            let parsed = parse_otpauth(line.to_string());
-            if parsed.is_err() {
-                eprintln!("Error parsing otpauth uri: {}", line);
-                continue;
+    {
+        let mut accounts = ACCOUNTS.write().unwrap();
+
+        for line in lines {
+            if line.starts_with("otpauth://") {
+                let parsed = parse_otpauth(line);
+                if parsed.is_err() {
+                    eprintln!("Error parsing otpauth uri: {}", line);
+                    continue;
+                }
+                let (id, entry) = parsed.unwrap();
+                if accounts.contains_key(&id) {
+                    eprintln!("Weird! Account for id {} already exists!", id);
+                    continue;
+                }
+                accounts.insert(id, entry);
+                ctr += 1;
             }
-            let (id, entry) = parsed.unwrap();
+        }
+    }
+
+    save_2fa();
+    return ctr;
+}
+
+#[tauri::command]
+fn set_name(id: u64, new_name: &str) -> Result<(), String> {
+    println!("Editing name for account with id: {}", id);
+    let mut accounts = ACCOUNTS.write().unwrap();
+    if let Some(account) = accounts.get_mut(&id) {
+        account.title = new_name.to_string();
+    }
+    save_2fa();
+    Ok(())
+}
+
+#[tauri::command]
+fn import_from_json(path: String) -> Result<i64, String> {
+    let path = path::Path::new(&path);
+
+    if !path.exists() {
+        return Err("File does not exist!".to_string());
+    }
+
+    println!("Importing from file: {:?}", path);
+
+    let file = std::fs::read_to_string(&path).unwrap();
+    let parsed: HashMap<u64, TotpEntry> = serde_json::from_str(&file).unwrap_or_default();
+    let mut ctr = 0;
+
+    // prevents potential deadlock?
+    {
+        let mut accounts = ACCOUNTS.write().unwrap();
+        for (id, entry) in parsed {
             if accounts.contains_key(&id) {
                 eprintln!("Weird! Account for id {} already exists!", id);
                 continue;
@@ -156,29 +213,67 @@ fn add_from_clipboard(clipboard: String) -> i64 {
             ctr += 1;
         }
     }
-    
-    let save_path = get_save_dir().join("2fa.json");
-    std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
 
-    return ctr;
+    save_2fa();
+    Ok(ctr)
 }
 
 #[tauri::command]
-fn set_name(id: u64, new_name: String) -> Result<(), String> {
-    println!("Editing name for account with id: {}", id);
-    let mut accounts = ACCOUNTS.write().unwrap();
-    if let Some(account) = accounts.get_mut(&id) {
-        account.title = new_name;
+fn export_to_json() -> String {
+    let accounts = ACCOUNTS.read().unwrap();
+    serde_json::to_string(&*accounts).unwrap()
+}
+
+#[tauri::command]
+fn set_master_password(key: String) -> Result<(), String> {
+    let key = key.replace(" ", "");
+    password_encryption::enable_encryption(&key).map_err(|e| e)?;
+    save_2fa();
+    Ok(())
+}
+
+#[tauri::command]
+fn disable_encryption() -> Result<(), String> {
+    password_encryption::disable_encryption();
+    save_2fa();
+    Ok(())
+}
+
+#[tauri::command]
+fn check_password(key: String) -> bool {
+    let key = key.replace(" ", "");
+    password_encryption::check_password(&key)
+}
+
+fn save_2fa() {
+    if password_encryption::is_encrypted() {
+        save_2fa_encrypted();
+    } else {
+        save_2fa_decrypted();
     }
+}
+
+fn save_2fa_decrypted() {
+    let accounts = ACCOUNTS.read().unwrap();
     let save_path = get_save_dir().join("2fa.json");
     std::fs::write(&save_path, serde_json::to_string(&*accounts).unwrap()).unwrap();
-    Ok(())
+}
+
+fn save_2fa_encrypted() {
+    let accounts = ACCOUNTS.read().unwrap();
+    let save_path = get_save_dir().join("2fa.json");
+    let mut encrypted_accounts = accounts.clone();
+    for (_, account) in encrypted_accounts.iter_mut() {
+        let secret = password_encryption::encrypt(&account.secret).unwrap();
+        account.secret = secret;
+    }
+    std::fs::write(&save_path, serde_json::to_string(&encrypted_accounts).unwrap()).unwrap();
 }
 
 fn main() {
     println!("Starting Tauri application!");
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard, set_name])
+        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard, set_name, is_encrypted, import_from_json, export_to_json, check_password, set_master_password, disable_encryption])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

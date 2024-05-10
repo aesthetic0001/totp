@@ -15,7 +15,7 @@ function AddOTP() {
         <div>
             <div className="flex flex-col space-y-10 justify-center items-center text-center">
                 <Link className="flex items-center cursor-pointer hover:text-emerald-400 transition-all ease-in-out"
-                      to="/">
+                      to="/accounts">
                     <ArrowLeft className="h-8 w-8"/>
                     <div className="text-4xl font-bold">Add OTP Account</div>
                 </Link>
