@@ -2880,6 +2880,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d66dc143e6b11c1eddc06d5c423cfc97062865baf299914ab64caa38182078fe"
 
 [[package]]
+name = "simple-totp"
+version = "0.1.3"
+dependencies = [
+ "aes-gcm",
+ "base32",
+ "chrono",
+ "dirs",
+ "hex",
+ "hmac-sha1",
+ "lazy_static",
+ "serde",
+ "serde_json",
+ "sha3",
+ "tauri",
+ "tauri-build",
+ "url",
+ "urlencoding",
+]
+
+[[package]]
 name = "siphasher"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3151,26 +3171,6 @@ dependencies = [
  "webkit2gtk",
  "webview2-com",
  "windows 0.39.0",
-]
-
-[[package]]
-name = "tauri-app"
-version = "0.0.0"
-dependencies = [
- "aes-gcm",
- "base32",
- "chrono",
- "dirs",
- "hex",
- "hmac-sha1",
- "lazy_static",
- "serde",
- "serde_json",
- "sha3",
- "tauri",
- "tauri-build",
- "url",
- "urlencoding",
 ]
 
 [[package]]
