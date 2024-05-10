@@ -58,7 +58,17 @@ lazy_static! {
     static ref ACCOUNTS: RwLock<HashMap<u64, TotpEntry >> = {
         let save_path = get_save_dir().join("2fa.json");
         let saved = std::fs::read_to_string(&save_path).unwrap_or_default();
-        RwLock::new(serde_json::from_str(&saved).unwrap_or_default())
+        let accounts: HashMap<u64, TotpEntry> = if password_encryption::is_encrypted() {
+            let mut encrypted_accounts: HashMap<u64, TotpEntry> = serde_json::from_str(&saved).unwrap_or_default();
+            for (_, account) in encrypted_accounts.iter_mut() {
+                let secret = password_encryption::try_decrypt(&account.secret).unwrap();
+                account.secret = secret;
+            }
+            encrypted_accounts
+        } else {
+            serde_json::from_str(&saved).unwrap_or_default()
+        };
+        RwLock::new(accounts)
     };
 }
 
@@ -72,7 +82,7 @@ fn get_saved_totp() -> Result<String, String> {
 fn remove_account(id: u64) -> Result<(), String> {
     println!("Removing account with id: {}", id);
     ACCOUNTS.write().unwrap().remove(&id);
-    
+
     Ok(())
 }
 
@@ -161,7 +171,7 @@ fn add_from_clipboard(clipboard: &str) -> i64 {
             }
         }
     }
-    
+
     save_2fa();
     return ctr;
 }
@@ -190,7 +200,7 @@ fn import_from_json(path: String) -> Result<i64, String> {
     let file = std::fs::read_to_string(&path).unwrap();
     let parsed: HashMap<u64, TotpEntry> = serde_json::from_str(&file).unwrap_or_default();
     let mut ctr = 0;
-    
+
     // prevents potential deadlock?
     {
         let mut accounts = ACCOUNTS.write().unwrap();
@@ -229,6 +239,12 @@ fn disable_encryption() -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn check_password(key: String) -> bool {
+    let key = key.replace(" ", "");
+    password_encryption::check_password(&key)
+}
+
 fn save_2fa() {
     if password_encryption::is_encrypted() {
         save_2fa_encrypted();
@@ -257,7 +273,7 @@ fn save_2fa_encrypted() {
 fn main() {
     println!("Starting Tauri application!");
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard, set_name, is_encrypted, import_from_json, export_to_json])
+        .invoke_handler(tauri::generate_handler![get_saved_totp, remove_account, add_account, set_favourite, retrieve_code, add_from_clipboard, set_name, is_encrypted, import_from_json, export_to_json, check_password, set_master_password, disable_encryption])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
